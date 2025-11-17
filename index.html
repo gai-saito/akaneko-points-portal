@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>あかねこポイント ポータルサイト</title>
+    <title>🐈 【令和最新版】あかねこポイント 掲示板 💰</title>
     <style>
         /* (CSSは変更なし。前回と同じものをそのまま使用) */
         body {
@@ -71,38 +71,60 @@
 <body>
 
     <header>
-        <h1>🐈 あかねこポイント ポータルサイト 💰</h1>
+        <h1>🐈 【令和最新版】あかねこポイント 掲示板 💰</h1>
     </header>
 
     <div id="point-list-container">
         <h2>現在のポイント状況</h2>
 
-        <div id="points-output">
-            </div>
+        <div id="points-output"></div>
 
         <p id="last-updated">最終更新日: <span></span></p>
     </div>
 
     <script>
-        const DATA_URL = 'points.json';
+        // ★★★ここに、ステップ1でコピーしたCSV形式の公開URLを貼り付ける！★★★
+        const DATA_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT8nVd-Of8bJCoDCdySdyeMmbVYe_4kz1p5xepQ7VMGbRk4zOxaCp1P0Ez2NdHxqIqJ3dJMyFPpqWvr/pub?gid=0&single=true&output=csv';
+
         const outputDiv = document.getElementById('points-output');
 
         function loadPoints() {
-            // points.jsonファイルを読み込む
+            // CSV形式でスプレッドシートからデータを取得
             fetch(DATA_URL)
                 .then(response => {
-                    // 読み込みに失敗したらエラーを出す
                     if (!response.ok) {
-                        throw new Error('ポイントデータの取得に失敗しました');
+                        throw new Error('データの取得に失敗しました');
                     }
-                    return response.json();
+                    return response.text(); // CSVデータをテキストとして取得
                 })
-                .then(data => {
+                .then(csvText => {
+                    // CSVデータをJavaScriptの配列に変換
+                    const rows = csvText.trim().split('\n'); // 行ごとに分割
+                    const data = [];
+
+                    // ヘッダー行 (1行目: "名前", "ポイント") をスキップし、2行目から処理を開始
+                    for (let i = 1; i < rows.length; i++) {
+                        const row = rows[i].split(','); // カンマで列を分割
+                        
+                        // 1列目:名前, 2列目:ポイント (ダブルクォーテーションを削除して数値化)
+                        // CSV公開時、日本語やカンマを含むとダブルクォーテーションで囲まれるため削除する
+                        const name = row[0] ? row[0].replace(/"/g, '').trim() : ''; 
+                        const score = row[1] ? parseInt(row[1].replace(/"/g, '').trim(), 10) : 0; 
+                        
+                        if (name) { // 名前が空でなければ追加
+                            data.push({ name: name, score: score });
+                        }
+                    }
+                    
+                    // =========================================================
+                    // ★★★ ポイント（score）が高い順（降順）にソート！ ★★★
+                    data.sort((a, b) => b.score - a.score);
+                    // =========================================================
+
                     let htmlContent = '';
                     
-                    // JSONデータ（配列）を一つずつ処理してHTML部品を組み立てる
+                    // ソートしたデータを元にHTML部品を組み立てる
                     data.forEach(person => {
-                        // scoreにカンマを付けて見やすくする
                         const formattedScore = person.score.toLocaleString();
                         
                         htmlContent += `
@@ -122,7 +144,7 @@
                 })
                 .catch(error => {
                     console.error('エラー:', error);
-                    outputDiv.innerHTML = '<p style="color:red;">ポイントデータを読み込めませんでした。points.jsonファイルを確認してください。</p>';
+                    outputDiv.innerHTML = '<p style="color:red;">ポイントデータを読み込めませんでした。スプレッドシートのURLと公開設定を確認してください。</p>';
                 });
         }
 
